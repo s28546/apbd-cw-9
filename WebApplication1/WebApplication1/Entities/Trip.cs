@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace WebApplication1.Entities;
+﻿namespace WebApplication1.Entities;
 
 public partial class Trip
 {
@@ -19,5 +16,5 @@ public partial class Trip
 
     public virtual ICollection<ClientTrip> ClientTrips { get; set; } = new List<ClientTrip>();
 
-    public virtual ICollection<Country> IdCountries { get; set; } = new List<Country>();
+    public virtual ICollection<CountryTrip> CountryTrips { get; set; } = new List<CountryTrip>();
 }

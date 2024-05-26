@@ -1,6 +1,8 @@
-﻿namespace WebApplication1.Controllers;
+﻿using Microsoft.AspNetCore.Mvc;
 
-public class Controller
+namespace WebApplication1.Controllers;
+
+public class Controller : ControllerBase
 {
     
 }
@@ -11,9 +13,4 @@ public class Controller
         List<Book> books = await context.Books.
         .Include(x => x.IdAuthorNavigation) -> inner join 
         .ToListAsync(cancellationToken)
-        
-        
-        
-        
-                
 */

@@ -1,32 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace WebApplication1.Entities;
 
-public partial class Cw9Context : DbContext
+public class Cw9Context(DbContextOptions<Cw9Context> options) : DbContext(options)
 {
-    public Cw9Context()
-    {
-    }
-
-    public Cw9Context(DbContextOptions<Cw9Context> options)
-        : base(options)
-    {
-    }
-
     public virtual DbSet<Client> Clients { get; set; }
 
     public virtual DbSet<ClientTrip> ClientTrips { get; set; }
 
     public virtual DbSet<Country> Countries { get; set; }
-
     public virtual DbSet<Trip> Trips { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=(LocalDb)\\MSSQLLocalDb; Initial Catalog=cw9;Integrated Security=True;Encrypt=False");
-
+    
+    public virtual DbSet<CountryTrip> CountryTrips { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Client>(entity =>
@@ -71,23 +56,23 @@ public partial class Cw9Context : DbContext
 
             entity.Property(e => e.IdCountry).ValueGeneratedNever();
             entity.Property(e => e.Name).HasMaxLength(120);
+        });
 
-            entity.HasMany(d => d.IdTrips).WithMany(p => p.IdCountries)
-                .UsingEntity<Dictionary<string, object>>(
-                    "CountryTrip",
-                    r => r.HasOne<Trip>().WithMany()
-                        .HasForeignKey("IdTrip")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("Country_Trip_Trip"),
-                    l => l.HasOne<Country>().WithMany()
-                        .HasForeignKey("IdCountry")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("Country_Trip_Country"),
-                    j =>
-                    {
-                        j.HasKey("IdCountry", "IdTrip").HasName("Country_Trip_pk");
-                        j.ToTable("Country_Trip");
-                    });
+        modelBuilder.Entity<CountryTrip>(entity =>
+        {
+            entity.HasKey(e => new { e.IdCountry, e.IdTrip }).HasName("Country_Trip_pk");
+
+            entity.ToTable("Country_Trip");
+
+            entity.HasOne(d => d.Country).WithMany(p => p.CountryTrips)
+                .HasForeignKey(d => d.IdCountry)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("Country_Trip_Country");
+
+            entity.HasOne(d => d.Trip).WithMany(p => p.CountryTrips)
+                .HasForeignKey(d => d.IdTrip)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("Country_Trip_Trip");
         });
 
         modelBuilder.Entity<Trip>(entity =>
@@ -102,9 +87,5 @@ public partial class Cw9Context : DbContext
             entity.Property(e => e.Description).HasMaxLength(220);
             entity.Property(e => e.Name).HasMaxLength(120);
         });
-
-        OnModelCreatingPartial(modelBuilder);
     }
-
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
