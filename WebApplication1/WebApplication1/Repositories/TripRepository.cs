@@ -1,24 +1,18 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebApplication1.Entities;
+using WebApplication1.Models;
 
 namespace WebApplication1.Repositories;
 
-public class TripRepository : ITripRepository
+public class TripRepository(Cw9Context context) : ITripRepository
 {
-    private readonly Cw9Context _context;
-
-    public TripRepository(Cw9Context context)
-    {
-        _context = context;
-    }
-
     public async Task<IEnumerable<TripDTO>> GetTrips()
     {
-        return await _context.Trips
-            .Include(t => t.Country_Trips)
+        var trips = await context.Trips
+            .Include(t => t.CountryTrips)
             .ThenInclude(ct => ct.Country)
-            .Include(t => t.Client_Trips)
-            .ThenInclude(ct => ct.Client)
+            .Include(t => t.ClientTrips)
+            .ThenInclude(ct => ct.IdClientNavigation)
             .OrderByDescending(t => t.DateFrom)
             .Select(t => new TripDTO(
                 t.Name,
@@ -26,20 +20,22 @@ public class TripRepository : ITripRepository
                 t.DateFrom,
                 t.DateTo,
                 t.MaxPeople,
-                t.Country_Trips.Select(ct => new CountryDTO(ct.Country.Name)).ToList(),
-                t.Client_Trips.Select(ct => new ClientDTO(ct.Client.FirstName, ct.Client.LastName)).ToList()
+                t.CountryTrips.Select(ct => new CountryDTO(ct.Country.Name)).ToList(),
+                t.ClientTrips.Select(ct => new ClientDTO(ct.IdClientNavigation.FirstName, ct.IdClientNavigation.LastName)).ToList()
             ))
             .ToListAsync();
+
+        return trips;
     }
 
     public async Task<PaginatedTripsDTO> GetTrips(int page, int pageSize)
     {
-        var totalTrips = await _context.Trips.CountAsync();
-        var trips = await _context.Trips
-            .Include(t => t.Country_Trips)
+        var totalTrips = await context.Trips.CountAsync();
+        var trips = await context.Trips
+            .Include(t => t.CountryTrips)
             .ThenInclude(ct => ct.Country)
-            .Include(t => t.Client_Trips)
-            .ThenInclude(ct => ct.Client)
+            .Include(t => t.ClientTrips)
+            .ThenInclude(ct => ct.IdClientNavigation)
             .OrderByDescending(t => t.DateFrom)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -49,39 +45,37 @@ public class TripRepository : ITripRepository
                 t.DateFrom,
                 t.DateTo,
                 t.MaxPeople,
-                t.Country_Trips.Select(ct => new CountryDTO(ct.Country.Name)).ToList(),
-                t.Client_Trips.Select(ct => new ClientDTO(ct.Client.FirstName, ct.Client.LastName)).ToList()
+                t.CountryTrips.Select(ct => new CountryDTO(ct.Country.Name)).ToList(),
+                t.ClientTrips.Select(ct => new ClientDTO(ct.IdClientNavigation.FirstName, ct.IdClientNavigation.LastName)).ToList()
             ))
             .ToListAsync();
 
-        var allPages = (int)Math.Ceiling((double)totalTrips / pageSize);
+        var allPages = (int) Math.Ceiling((double)totalTrips / pageSize);
 
         return new PaginatedTripsDTO(page, pageSize, allPages, trips);
     }
+    
+    public async Task<Trip?> GetTripById(int idTrip)
+    {
+        return await context.Trips.FindAsync(idTrip);
+    }
+
+    public async Task<bool> IsClientAssignedToTrip(int idTrip, int idClient)
+    {
+        return await context.ClientTrips.AnyAsync(ct => ct.IdTrip == idTrip && ct.IdClient == idClient);
+    }
+
+    public async Task AssignClientToTrip(int idTrip, int idClient, DateTime? paymentDate, DateTime registeredAt)
+    {
+        var clientTrip = new ClientTrip
+        {
+            IdTrip = idTrip,
+            IdClient = idClient,
+            PaymentDate = paymentDate,
+            RegisteredAt = registeredAt
+        };
+
+        context.ClientTrips.Add(clientTrip);
+        await context.SaveChangesAsync();
+    }
 }
-
-public record TripDTO(
-    string Name,
-    string Description,
-    DateTime DateFrom,
-    DateTime DateTo,
-    int MaxPeople,
-    List<CountryDTO> Countries,
-    List<ClientDTO> Clients
-);
-
-public record CountryDTO(
-    string Name
-);
-
-public record ClientDTO(
-    string FirstName,
-    string LastName
-);
-
-public record PaginatedTripsDTO(
-    int PageNum,
-    int PageSize,
-    int AllPages,
-    List<TripDTO> Trips
-);
