@@ -4,5 +4,7 @@ namespace WebApplication1.Services;
 
 public interface IClientService
 {
-    Task<Client?> DeleteClient(int idClient);
+    Task<bool> DeleteClient(int idClient);
+    Task<bool> DoesClientExist(int idClient);
+    Task<bool> DoesClientHaveTrips(int idClient);
 }

@@ -1,6 +1,6 @@
 ﻿namespace WebApplication1.Entities;
 
-public partial class Trip
+public class Trip
 {
     public int IdTrip { get; set; }
 

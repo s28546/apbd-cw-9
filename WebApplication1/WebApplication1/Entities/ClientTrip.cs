@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace WebApplication1.Entities;
 
-public partial class ClientTrip
+public class ClientTrip
 {
     public int IdClient { get; set; }
 

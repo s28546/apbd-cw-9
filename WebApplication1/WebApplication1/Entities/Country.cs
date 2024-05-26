@@ -1,6 +1,6 @@
 ﻿namespace WebApplication1.Entities;
 
-public partial class Country
+public class Country
 {
     public int IdCountry { get; set; }
 
