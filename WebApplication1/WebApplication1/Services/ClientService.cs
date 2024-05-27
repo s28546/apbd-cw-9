@@ -1,5 +1,4 @@
-﻿using WebApplication1.Entities;
-using WebApplication1.Repositories;
+﻿using WebApplication1.Repositories;
 
 namespace WebApplication1.Services;
 
@@ -18,6 +17,12 @@ public class ClientService(IClientRepository clientRepository) : IClientService
     public async Task<bool> DoesClientExist(int idClient)
     {
         var client = await clientRepository.GetClientById(idClient);
+        return client != null;
+    }
+    
+    public async Task<bool> DoesClientExist(string pesel)
+    {
+        var client = await clientRepository.GetClientByPesel(pesel);
         return client != null;
     }
 }

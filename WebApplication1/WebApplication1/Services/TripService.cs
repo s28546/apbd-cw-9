@@ -1,4 +1,5 @@
-﻿using WebApplication1.Models;
+﻿using WebApplication1.Entities;
+using WebApplication1.Models;
 using WebApplication1.Repositories;
 
 namespace WebApplication1.Services
@@ -11,26 +12,31 @@ namespace WebApplication1.Services
             return await tripRepository.GetTrips(page, pageSize);
         }
 
+        public async Task<bool> TripYetToHappen(int idTrip)
+        {
+            var trip = await tripRepository.GetTripById(idTrip);
+            return trip.DateFrom > DateTime.Now;
+        }
+
+        public async Task<bool> ClientAlreadyAssigned(int idTrip, string pesel)
+        {
+            var client = await clientRepository.GetClientByPesel(pesel);
+            var clientTrips = await clientRepository.GetClientTrips(client);
+            return clientTrips.Any(ct => ct.IdTrip == idTrip);
+        }
+
+        public async Task<bool> DoesTripExist(int tripId)
+        {
+            var trip = await tripRepository.GetTripById(tripId);
+            return trip != null;
+        }
+
         public async Task<bool> AssignClientToTrip(int idTrip, string pesel, DateTime? paymentDate)
         {
-            var existingClient = await clientRepository.GetClientByPesel(pesel);
-            if (existingClient == null)
-            {
-                return false; // Client does not exist
-            }
-
-            if (await tripRepository.IsClientAssignedToTrip(idTrip, existingClient.IdClient))
-            {
-                return false; // Client is already assigned to the trip
-            }
-
+            var client = await clientRepository.GetClientByPesel(pesel);
             var trip = await tripRepository.GetTripById(idTrip);
-            if (trip == null || trip.DateFrom <= DateTime.Now)
-            {
-                return false; // Trip does not exist or DateFrom is in the past
-            }
-
-            await tripRepository.AssignClientToTrip(idTrip, existingClient.IdClient, paymentDate, DateTime.Now);
+            
+            await tripRepository.AssignClientToTrip(idTrip, client.IdClient, paymentDate, DateTime.Now);
             return true;
         }
     }

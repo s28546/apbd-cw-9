@@ -8,4 +8,5 @@ public interface IClientRepository
     Task<Client?> GetClientById(int idClient); 
     Task<Client?> GetClientByPesel(string pesel);
     Task<bool> DoesClientHaveTrips(int idClient);
+    Task<List<ClientTrip>> GetClientTrips(Client client);
 }

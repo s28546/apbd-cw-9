@@ -8,7 +8,8 @@ public class TripRepository(Cw9Context context) : ITripRepository
 {
     public async Task<PaginatedTripsDTO> GetTrips(int page, int pageSize)
     {
-        var totalTrips = await context.Trips.CountAsync();
+        var total = await context.Trips.CountAsync();
+        
         var trips = await context.Trips
             .Include(t => t.CountryTrips)
             .ThenInclude(ct => ct.Country)
@@ -28,7 +29,7 @@ public class TripRepository(Cw9Context context) : ITripRepository
             ))
             .ToListAsync();
 
-        var allPages = (int) Math.Ceiling((double)totalTrips / pageSize);
+        var allPages = (int) Math.Ceiling((double) total / pageSize);
 
         return new PaginatedTripsDTO(page, pageSize, allPages, trips);
     }

@@ -18,6 +18,15 @@ public class ClientRepository(Cw9Context context) : IClientRepository
         return false;
     }
     
+    public async Task<List<ClientTrip>> GetClientTrips(Client client)
+    {
+        return await context.ClientTrips
+            .Include(ct => ct.IdTripNavigation)
+            .Include(ct => ct.IdClientNavigation)
+            .Where(ct => ct.IdClient == client.IdClient)
+            .ToListAsync();
+    }
+    
     public async Task<bool> DoesClientHaveTrips(int idClient)
     {
         return await context.ClientTrips.AnyAsync(ct => ct.IdClient == idClient);

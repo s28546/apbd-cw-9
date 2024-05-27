@@ -4,11 +4,9 @@ using WebApplication1.Services;
 
 namespace WebApplication1.Controllers;
 
-
-//trip service i repository do zmiany, assign client request tez zly bedzie, spojrzec na tego linqa z Gettrips
 [ApiController]
 [Route("api/trips")]
-public class TripsController(ITripService tripService) : ControllerBase
+public class TripsController(ITripService tripService, IClientService clientService) : ControllerBase
 {
         [HttpGet]
         public async Task<IActionResult> GetTrips([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -25,32 +23,20 @@ public class TripsController(ITripService tripService) : ControllerBase
         [HttpPost("{idTrip}/clients")]
         public async Task<IActionResult> AssignClientToTrip(int idTrip, [FromBody] AssignClientRequest request)
         {
-                //czy z przyszlosci datetime -> jak nie blad
-                //czy wycieczka istnieje -> jak nie blad
-                //czy wycieczka sie juz odbyla -> jak tak to blad
-                //czy klient o nr pesel istnieje -> jak tak to blad
-                /*
-                 *      PaymentDate może mieć wartość NULL dla tych
-                        klientów, którzy jeszcze nie zapłacili za wycieczkę.
-                        Ponadto RegisteredAt w tabeli Client_Trip powinna być
-                        zgodna z czasem przyjęcia żądania przez serwer.
-                 *
-                                         *      {
-                        "FirstName": "John",
-                        "LastName": "Doe",
-                        "Email": "doe@wp.pl",
-                        "Telephone": "543-323-542",
-                        "Pesel": "91040294554",
-                        "IdTrip": 10,
-                        "TripName": "Rome",
-                        "PaymentDate": "4/20/2021"
-}
-                 * 
-                 * 
-                 */
+                if (await clientService.DoesClientExist(request.Pesel))
+                        return BadRequest($"Client with PESEL {request.Pesel} already exists.");
+
+                if (!await tripService.DoesTripExist(idTrip))
+                        return NotFound($"Trip with id {idTrip} does not exist.");
+                
+                if (!await tripService.TripYetToHappen(idTrip))
+                        return BadRequest($"Trip with ID {idTrip} already happened.");
+                
+                if (await tripService.ClientAlreadyAssigned(idTrip, request.Pesel))
+                        return BadRequest($"Client with PESEL {request.Pesel} is already assigned to trip {idTrip}.");
                 
                 if (await tripService.AssignClientToTrip(idTrip, request.Pesel, request.PaymentDate))
-                {
+                { 
                         return Ok();
                 }
 
